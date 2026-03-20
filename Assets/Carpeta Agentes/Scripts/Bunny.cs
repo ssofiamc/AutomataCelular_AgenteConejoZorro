@@ -7,7 +7,7 @@ public class Bunny : MonoBehaviour
     public float energy = 10f;
     public float age = 0f;
     public float maxAge = 20f;
-    public float speed = 1.0f;
+    public float speed = 1f;
     public float visionRange = 5f;
 
 
@@ -28,7 +28,7 @@ public class Bunny : MonoBehaviour
     {
         if (isAlive) return;
 
-        this.h = h; // Especificar la claase de donde proviene
+        this.h = h; // Especificar la clase de donde proviene
 
         EvaluateState();
 
@@ -44,7 +44,7 @@ public class Bunny : MonoBehaviour
                 Eat();
                 break;
             case BunnyState.Fleeing:
-                Flee();
+                //Flee();
                 break;
             
         }
@@ -52,6 +52,40 @@ public class Bunny : MonoBehaviour
         Age();
         CheckState();
 
+    }
+
+    void EvaluateState()
+    {
+        // Casos y prioriddes del conejo
+        // 1. Si hay un depredador tengo que huir
+
+        // 2. Si tengo poca energia, tengo que buscar comida
+        if (energy < 500f)
+        {
+            Food nearestFood = FindNearestFood();
+            if (nearestFood != null)
+            {
+                currentState = BunnyState.SearchingFood;
+                destination = nearestFood.transform.position;
+            }
+        }
+        // 3. Si tengo comida, tengo que comer
+        Collider2D foodHit = Physics2D.OverlapCircle(transform.position, 0.2f, LayerMask.GetMask("Food")); // Verifica si choca con algun elemento
+        if (foodHit != null)
+        {
+            Food food = foodHit.GetComponent<Food>(); // Trae la nutricion qu tiene esa comida
+            if (food != null)
+            {
+                currentState = BunnyState.Eating;
+                return;
+            }
+        }
+
+        // 4. Si estoy de chill, tengo que explorar
+        if (currentState == BunnyState.Eating == false)
+        {
+            currentState = BunnyState.Exploring;
+        }
     }
 
     void Move() // Se encarga de desplazar 
@@ -80,7 +114,7 @@ public class Bunny : MonoBehaviour
         }
     }
 
-    void Explore()
+    void Explore() // Estado de explorar
     {
         Food nearestFood = FindNearestFood();
         if (nearestFood != null)
@@ -96,7 +130,7 @@ public class Bunny : MonoBehaviour
         }
     }
 
-    void SelectNewDestination()
+    void SelectNewDestination() // Elige un nuevo destino segun su rango de vision
     {
         Vector3 direction = new Vector3(
             Random.Range(-visionRange, visionRange),
@@ -105,6 +139,18 @@ public class Bunny : MonoBehaviour
             );
 
         Vector3 target = transform.position + direction;
+
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, visionRange, LayerMask.GetMask("Obstacle"));
+
+        if (hit.collider != null)
+        {
+            float offset = transform.localScale.magnitude * 0.5f;
+            destination = hit.point - (Vector2)direction.normalized * offset;
+        }
+        else
+        {
+            destination = target;
+        }
     }
     void SearchFood() // Estado de buscar la comida
     {
@@ -159,5 +205,17 @@ public class Bunny : MonoBehaviour
             }
         }
         return nearestFood;
+    }
+
+    private void OnDrawGizmosSelected() // Esto es lo que se va adibujar para conocer lo que hace el conejo
+    {
+        Gizmos.color = Color.green; // Este representa el rango de vision
+        Gizmos.DrawWireSphere (transform.position, visionRange);
+
+        Gizmos.color = Color.red; // Este representa el punto al que va
+        Gizmos.DrawSphere(destination, 0.2f);
+
+        Gizmos.color = Color.yellow; // Este representa la linea del camino que toma
+        Gizmos.DrawLine(transform.position, destination);
     }
 }

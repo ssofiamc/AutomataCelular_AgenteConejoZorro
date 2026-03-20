@@ -1,9 +1,8 @@
 using UnityEngine;
 
-public enum BunnyState
+public enum PredatorState
 {
     Exploring,
     SearchingFood,
-    Eating,
-    Fleeing
+    Eating
 }

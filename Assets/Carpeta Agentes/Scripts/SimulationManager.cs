@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class SimulationManager : MonoBehaviour
@@ -6,9 +7,12 @@ public class SimulationManager : MonoBehaviour
     public float secondsPerIteration = 1.0f;
     private float time = 0;
 
-    void Start()
+    private List<Bunny> bunnies = new List<Bunny>();
+
+    void Start() //Lista de conejos
     {
-        
+        Bunny[] foundBunnies = FindObjectsByType<Bunny>(FindObjectsSortMode.InstanceID);
+        bunnies = new List<Bunny>(foundBunnies);
     }
 
     void Update()
@@ -24,6 +28,6 @@ public class SimulationManager : MonoBehaviour
 
     void Simulate()
     {
-
+        foreach (Bunny b in bunnies) if (b != null && b.isAlive) b.Simulate(secondsPerIteration);
     }
 }
