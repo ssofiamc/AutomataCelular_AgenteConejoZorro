@@ -80,7 +80,32 @@ public class Bunny : MonoBehaviour
         }
     }
 
+    void Explore()
+    {
+        Food nearestFood = FindNearestFood();
+        if (nearestFood != null)
+            {
+            currentState = BunnyState.SearchingFood;
+            destination = nearestFood.transform.position;
+            return;
+        }
 
+        if (Vector3.Distance(transform.position, destination) < 0.1f)
+        {
+            SelectNewDestination();
+        }
+    }
+
+    void SelectNewDestination()
+    {
+        Vector3 direction = new Vector3(
+            Random.Range(-visionRange, visionRange),
+            Random.Range(-visionRange, visionRange),
+            0
+            );
+
+        Vector3 target = transform.position + direction;
+    }
     void SearchFood() // Estado de buscar la comida
     {
         Food nearestFood = FindNearestFood();
