@@ -12,7 +12,7 @@ public class Predator : MonoBehaviour
 
 
     // Variables de los estados del conejo
-    [Header("Bunny States")]
+    [Header("Predator States")]
     public bool isAlive = true;
     public PredatorState currentState = PredatorState.Exploring;
 
@@ -27,7 +27,7 @@ public class Predator : MonoBehaviour
 
     public void Simulate(float h)
     {
-        if (isAlive) return;
+        if (!isAlive) return;
 
         this.h = h; // Especificar la clase de donde proviene
 
@@ -55,11 +55,11 @@ public class Predator : MonoBehaviour
         transform.position = Vector3.MoveTowards(
             transform.position,
             destination,
-            speed = h
+            speed * h
             );
 
 
-        energy -= speed + h;
+        energy -= speed * h;
     }
 
     void Age() // Añade edad a medida de que avanza el tiempo
@@ -78,7 +78,7 @@ public class Predator : MonoBehaviour
 
     void SearchFood() // Estado de buscar la comida
     {
-        Food nearestBunny = FindNearestBunny();
+        Bunny nearestBunny = FindNearestBunny();
         if (nearestBunny == null)
         {
             currentState = PredatorState.Exploring;
@@ -101,23 +101,18 @@ public class Predator : MonoBehaviour
             Bunny food = foodHit.GetComponent<Bunny>(); // Trae la nutricion qu tiene esa comida
             if (food != null)
             {
-                energy = +food.age;
+                energy += food.age;
                 Destroy(food.gameObject); // Especifica que se estruye solo ese gameObject
             }
         }
         currentState = PredatorState.Exploring; // Luego de comer vuelve al estado de explorar
     }
 
-    void Update()
-    {
-        
-    }
-
     void Explore() // Estado de explorar
     {
-        Food nearestBunny = FindNearestBunny();
+        Bunny nearestBunny = FindNearestBunny();
         if (nearestBunny != null)
-            {
+        {
             currentState = PredatorState.SearchingFood;
             destination = nearestBunny.transform.position;
             return;

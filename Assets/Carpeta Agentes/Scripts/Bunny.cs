@@ -26,7 +26,7 @@ public class Bunny : MonoBehaviour
 
     public void Simulate (float h)
     {
-        if (isAlive) return;
+        if (!isAlive) return;
 
         this.h = h; // Especificar la clase de donde proviene
 
@@ -44,7 +44,7 @@ public class Bunny : MonoBehaviour
                 Eat();
                 break;
             case BunnyState.Fleeing:
-                //Flee();
+                Flee();
                 break;
             
         }
@@ -58,6 +58,11 @@ public class Bunny : MonoBehaviour
     {
         // Casos y prioriddes del conejo
         // 1. Si hay un depredador tengo que huir
+        if (PredatorInRange())
+        {
+            currentState = BunnyState.Fleeing;
+            return;
+        }
 
         // 2. Si tengo poca energia, tengo que buscar comida
         if (energy < 500f)
@@ -69,6 +74,7 @@ public class Bunny : MonoBehaviour
                 destination = nearestFood.transform.position;
             }
         }
+
         // 3. Si tengo comida, tengo que comer
         Collider2D foodHit = Physics2D.OverlapCircle(transform.position, 0.2f, LayerMask.GetMask("Food")); // Verifica si choca con algun elemento
         if (foodHit != null)
@@ -93,11 +99,10 @@ public class Bunny : MonoBehaviour
         transform.position = Vector3.MoveTowards(
             transform.position,
             destination,
-            speed = h
+            speed * h
             );
 
-
-        energy -= speed + h;
+        energy -= speed * h;
     }
 
     void Age() // Añade edad a medida de que avanza el tiempo
@@ -177,7 +182,7 @@ public class Bunny : MonoBehaviour
             Food food = foodHit.GetComponent<Food>(); // Trae la nutricion qu tiene esa comida
             if (food != null)
             {
-                energy = +food.nutrition;
+                energy += food.nutrition;
                 Destroy(food.gameObject); // Especifica que se estruye solo ese gameObject
             }
         }
@@ -205,6 +210,50 @@ public class Bunny : MonoBehaviour
             }
         }
         return nearestFood;
+    }
+    void Flee()
+    {
+        // Elegir dirección contraria al depredador
+        Vector3 fleeDir = (transform.position - GetNearestPredatorPosition()).normalized;
+        destination = transform.position + fleeDir * visionRange;
+
+        // Después de huir vuelve a explorar
+        currentState = BunnyState.Exploring;
+
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, fleeDir, visionRange, LayerMask.GetMask("Obstacle"));
+
+        if (hit.collider != null)
+        {
+            float offset = transform.localScale.magnitude * 0.5f;
+            destination = hit.point - (Vector2)fleeDir * offset;
+        }
+        else
+        {
+            destination = transform.position + fleeDir * visionRange;
+        }
+    }
+    bool PredatorInRange()
+    {
+        Collider2D predator = Physics2D.OverlapCircle(transform.position, visionRange, LayerMask.GetMask("Predator"));
+        return predator != null;
+    }
+
+    Vector3 GetNearestPredatorPosition()
+    {
+        Collider2D[] predators = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Predator"));
+        float minDist = Mathf.Infinity;
+        Vector3 pos = transform.position;
+
+        foreach (var p in predators)
+        {
+            float dist = Vector2.Distance(transform.position, p.transform.position);
+            if (dist < minDist)
+            {
+                minDist = dist;
+                pos = p.transform.position;
+            }
+        }
+        return pos;
     }
 
     private void OnDrawGizmosSelected() // Esto es lo que se va adibujar para conocer lo que hace el conejo
